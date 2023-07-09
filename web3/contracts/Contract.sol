@@ -14,12 +14,6 @@ contract RealEstateApp {
         uint256 area;
         bool is_sold;
         bytes32[] property_images;
-        Ownership[] past_owners;
-    }
-
-    struct Ownership {
-        address owner;
-        uint256 duration;
     }
 
     struct UserProfile {
@@ -47,7 +41,7 @@ contract RealEstateApp {
     }
 
     function listProperty(string memory _title, string memory _description, PropertyCategory _category, uint256 _price, uint256 _area, bytes32[] memory _images) external {
-        properties[property_id] = Property(property_id, payable(msg.sender), _title, _description, _category, _price, _area, false, _images, new Ownership[](0));
+        properties[property_id] = Property(property_id, payable(msg.sender), _title, _description, _category, _price, _area, false, _images);
         emit PropertyListed(property_id, msg.sender, _title, _category, _price);
         property_id++;
     }
@@ -60,7 +54,6 @@ contract RealEstateApp {
         payable(property.owner).transfer(property.price);
         property.owner = payable(msg.sender);
         property.is_sold = true;
-        property.past_owners.push(Ownership(msg.sender, block.timestamp));
 
         emit PropertySold(_property_id, msg.sender);
     }
@@ -78,11 +71,10 @@ contract RealEstateApp {
         property.property_images = _images;
     }
 
-    function getOwnerDetails(uint256 _property_id) external view returns (address, uint256, Ownership[] memory) {
+    function getOwnerDetails(uint256 _property_id) external view returns (address, uint256) {
         Property storage property = properties[_property_id];
         address current_owner = property.owner;
-        Ownership[] memory past_owners = property.past_owners;
-        return (current_owner, property.area, past_owners);
+        return (current_owner, property.area);
     }
 
     function updateUserProfile(string memory _phone_number, string memory _email) external {
@@ -91,46 +83,50 @@ contract RealEstateApp {
         user_profile.email = _email;
     }
 
-    function getUnsoldProperties() external view returns (Property[] memory) {
+    function getPropertiesByOwner(address _userAddress) external view returns (Property[] memory, Property[] memory, Property[] memory) {
         uint256 unsoldCount = 0;
+        uint256 soldCount = 0;
+        uint256 boughtCount = 0;
+
         for (uint256 i = 1; i < property_id; i++) {
-            if (!properties[i].is_sold) {
-                unsoldCount++;
+            Property storage property = properties[i];
+            if (property.owner == _userAddress) {
+                if (!property.is_sold) {
+                    unsoldCount++;
+                } else {
+                    soldCount++;
+                }
+            }
+            if (msg.sender == property.owner && property.is_sold) {
+                boughtCount++;
             }
         }
 
         Property[] memory unsoldProperties = new Property[](unsoldCount);
-        uint256 currentIndex = 0;
+        Property[] memory soldProperties = new Property[](soldCount);
+        Property[] memory boughtProperties = new Property[](boughtCount);
+
+        uint256 unsoldIndex = 0;
+        uint256 soldIndex = 0;
+        uint256 boughtIndex = 0;
 
         for (uint256 i = 1; i < property_id; i++) {
-            if (!properties[i].is_sold) {
-                unsoldProperties[currentIndex] = properties[i];
-                currentIndex++;
+            Property storage property = properties[i];
+            if (property.owner == _userAddress) {
+                if (!property.is_sold) {
+                    unsoldProperties[unsoldIndex] = property;
+                    unsoldIndex++;
+                } else {
+                    soldProperties[soldIndex] = property;
+                    soldIndex++;
+                }
+            }
+            if (msg.sender == property.owner && property.is_sold) {
+                boughtProperties[boughtIndex] = property;
+                boughtIndex++;
             }
         }
 
-        return unsoldProperties;
+        return (unsoldProperties, soldProperties, boughtProperties);
     }
-
-    function getPropertiesByOwner(address _userAddress) external view returns (Property[] memory) {
-    uint256 propertyCount = 0;
-    for (uint256 i = 1; i < property_id; i++) {
-        if (properties[i].owner == _userAddress) {
-            propertyCount++;
-        }
-    }
-
-    Property[] memory userProperties = new Property[](propertyCount);
-    uint256 currentIndex = 0;
-
-    for (uint256 i = 1; i < property_id; i++) {
-        if (properties[i].owner == _userAddress) {
-            userProperties[currentIndex] = properties[i];
-            currentIndex++;
-        }
-    }
-
-    return userProperties;
-}
-
 }
