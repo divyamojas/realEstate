@@ -156,7 +156,9 @@ contract RealEstateApp {
 
     function withdrawFunds() external onlyOwner {
         uint256 contractBalance = address(this).balance;
-        payable(contract_owner).transfer(contractBalance);
+        (bool sent,) = payable(contract_owner).call{value: contractBalance}("");
+
+        // payable(contract_owner).transfer(contractBalance);
     }
 
 }
