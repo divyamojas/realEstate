@@ -51,12 +51,13 @@ contract RealEstateApp {
         require(!property.is_sold, "Property is already sold");
         require(msg.value >= property.price, "Insufficient payment");
 
-        payable(property.owner).transfer(property.price);
+        property.owner.transfer(property.price);  // Transfer the payment to the property owner
         property.owner = payable(msg.sender);
         property.is_sold = true;
 
         emit PropertySold(_property_id, msg.sender);
     }
+
 
     function getProperty(uint256 _property_id) external view returns (Property memory) {
         return properties[_property_id];
@@ -151,6 +152,11 @@ contract RealEstateApp {
         }   
 
         return unsoldProperties;
+    }
+
+    function withdrawFunds() external onlyOwner {
+        uint256 contractBalance = address(this).balance;
+        payable(contract_owner).transfer(contractBalance);
     }
 
 }
