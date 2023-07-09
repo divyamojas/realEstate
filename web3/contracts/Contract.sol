@@ -13,7 +13,7 @@ contract RealEstateApp {
         uint256 price;
         uint256 area;
         bool is_sold;
-        bytes32[] property_images;
+        string property_images;
     }
 
     struct UserProfile {
@@ -40,7 +40,7 @@ contract RealEstateApp {
         _;
     }
 
-    function listProperty(string memory _title, string memory _description, PropertyCategory _category, uint256 _price, uint256 _area, bytes32[] memory _images) external {
+    function listProperty(string memory _title, string memory _description, PropertyCategory _category, uint256 _price, uint256 _area, string memory _images) external {
         properties[property_id] = Property(property_id, payable(msg.sender), _title, _description, _category, _price, _area, false, _images);
         emit PropertyListed(property_id, msg.sender, _title, _category, _price);
         property_id++;
@@ -66,7 +66,7 @@ contract RealEstateApp {
         return user_profiles[_userAddress];
     }
 
-    function addImages(uint256 _property_id, bytes32[] memory _images) external {
+    function addImages(uint256 _property_id, string memory _images) external {
         Property storage property = properties[_property_id];
         property.property_images = _images;
     }
