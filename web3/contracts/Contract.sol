@@ -129,4 +129,28 @@ contract RealEstateApp {
 
         return (unsoldProperties, soldProperties, boughtProperties);
     }
+
+    function getUnsoldPropertiesExceptCurrentUser() external view returns (Property[] memory) {
+        uint256 unsoldCount = 0;
+        address currentUser = msg.sender;
+
+        for (uint256 i = 1; i < property_id; i++) {
+            if (!properties[i].is_sold && properties[i].owner != currentUser) {
+                unsoldCount++;
+            }
+        }
+
+        Property[] memory unsoldProperties = new Property[](unsoldCount);
+        uint256 currentIndex = 0;
+
+        for (uint256 i = 1; i < property_id; i++) {
+            if (!properties[i].is_sold && properties[i].owner != currentUser) {
+                unsoldProperties[currentIndex] = properties[i];
+                currentIndex++;
+            }   
+        }   
+
+        return unsoldProperties;
+    }
+
 }
